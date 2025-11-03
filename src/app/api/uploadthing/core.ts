@@ -1,7 +1,8 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/next'
 import { z } from 'zod'
-import sharp from 'sharp'
+import sizeOf from 'image-size'
 import { db } from '@/db'
+// import sizeOf from "image-size";
 
 const f = createUploadthing()
 
@@ -11,38 +12,44 @@ export const ourFileRouter = {
     .middleware(async ({ input }) => {
       return { input }
     })
-    .onUploadComplete(async ({ metadata, file }) => {
-      const { configId } = metadata.input
 
-      const res = await fetch(file.url)
-      const buffer = await res.arrayBuffer()
 
-      const imgMetadata = await sharp(buffer).metadata()
-      const { width, height } = imgMetadata
+.onUploadComplete(async ({ metadata, file }) => {
+  try {
+    const { configId } = metadata.input;
 
-      if (!configId) {
-        const configuration = await db.configuration.create({
-          data: {
-            imageUrl: file.url,
-            height: height || 500,
-            width: width || 500,
-          },
-        })
+    // Fetch and convert image to buffer
+    const res = await fetch(file.url);
+    const arrayBuffer = await res.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-        return { configId: configuration.id }
-      } else {
-        const updatedConfiguration = await db.configuration.update({
-          where: {
-            id: configId,
-          },
-          data: {
-            croppedImageUrl: file.url,
-          },
-        })
+    // Get image dimensions safely
+    const { width, height } = sizeOf(buffer);
 
-        return { configId: updatedConfiguration.id }
-      }
-    }),
+    if (!configId) {
+      const configuration = await db.configuration.create({
+        data: {
+          imageUrl: file.url,
+          width: width ?? 500,
+          height: height ?? 500,
+        },
+      });
+
+      return { configId: configuration.id };
+    } else {
+      const updatedConfiguration = await db.configuration.update({
+        where: { id: configId },
+        data: { croppedImageUrl: file.url },
+      });
+
+      return { configId: updatedConfiguration.id };
+    }
+  } catch (error) {
+    console.error("UploadThing onUploadComplete error:", error);
+    throw new Error("Failed to process image upload");
+  }
+})
+
 } satisfies FileRouter
 
 export type OurFileRouter = typeof ourFileRouter
