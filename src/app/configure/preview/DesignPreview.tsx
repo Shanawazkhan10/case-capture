@@ -15,6 +15,8 @@ import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
 import { useKindeBrowserClient } from '@kinde-oss/kinde-auth-nextjs'
 import LoginModal from '@/components/LoginModal'
+import AudienceOverviewModal from '../paymentPopUp/PaymentPop'
+// import { AudienceOverviewDialog } from '../paymentPopUp/PaymentPop'
 
 const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
   const router = useRouter()
@@ -22,6 +24,7 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
   const { id } = configuration
   const { user } = useKindeBrowserClient()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false)
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false)
 
   const [showConfetti, setShowConfetti] = useState<boolean>(false)
   useEffect(() => setShowConfetti(true))
@@ -58,16 +61,18 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
   const handleCheckout = () => {
     if (user) {
       // create payment session
-      createPaymentSession({ configId: id })
+      // createPaymentSession({ configId: id })
+      setIsCheckoutModalOpen(true)
     } else {
       // need to log in
-      localStorage.setItem('configurationId', id)
-      setIsLoginModalOpen(true)
+      // localStorage.setItem('configurationId', id)
+      // setIsLoginModalOpen(true)
     }
   }
 
   return (
     <>
+
       <div
         aria-hidden='true'
         className='pointer-events-none select-none absolute inset-0 overflow-hidden flex justify-center'>
@@ -78,7 +83,10 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
       </div>
 
       <LoginModal isOpen={isLoginModalOpen} setIsOpen={setIsLoginModalOpen} />
-
+      <AudienceOverviewModal
+        isOpen={isCheckoutModalOpen}
+        setIsOpen={setIsCheckoutModalOpen}
+      />
       <div className='mt-20 flex flex-col items-center md:grid text-sm sm:grid-cols-12 sm:grid-rows-1 sm:gap-x-6 md:gap-x-8 lg:gap-x-12'>
         <div className='md:col-span-4 lg:col-span-3 md:row-span-2 md:row-end-2'>
           <Phone
@@ -166,6 +174,8 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
           </div>
         </div>
       </div>
+
+      {/* {isCheckoutModalOpen && <AudienceOverviewDialog setIsOpen={setIsCheckoutModalOpen} />} */}
     </>
   )
 }
